@@ -14,6 +14,8 @@ git remote add origin https://github.com/AaronKurian/OS_Lab.git
 
 
 
+
+
 git push -u origin main
 
 git remote add origin https://github.com/AaronKurian/OS_Lab.git
@@ -21,3 +23,4 @@ git remote add origin https://github.com/AaronKurian/OS_Lab.git
 git branch -M main
 
 git push -u origin main
+
