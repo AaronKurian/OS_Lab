@@ -1,3 +1,17 @@
+/*
+Program to Implement 
+-fork
+-exec
+-getpid
+-exit
+-wait
+-close
+-stat
+-opendir
+-readir
+System Commands
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
