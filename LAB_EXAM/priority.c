@@ -1,151 +1,204 @@
-#include <stdio.h>
-#include <stdbool.h>
+// #include <stdio.h>
 
-struct Process {
-    int pid;          // Process ID
-    int arrival_time; // Arrival time
-    int burst_time;   // Burst time
-    int priority;     // Priority (lower value means higher priority)
-    int start_time;   // Start time of execution
-    int completion_time; // Completion time
-    int waiting_time;    // Waiting time
-    int turnaround_time; // Turnaround time
-    bool executed;       // Flag to check if process is executed
-};
+// struct Process {
+//     int processNo;
+//     int arrivalTime;
+//     int burstTime;
+//     int priority;
+// };
 
-// Function to find the process with highest priority among arrived processes
-int findHighestPriorityProcess(struct Process processes[], int n, int current_time) {
-    int highest_priority_index = -1;
-    int highest_priority = 9999;
+// // Sort processes based on arrival time and priority
+// void sortProcesses(struct Process proc[], int n) {
+//     for (int i = 0; i < n - 1; i++) {
+//         for (int j = i + 1; j < n; j++) {
+//             if (proc[j].arrivalTime < proc[i].arrivalTime ||
+//                 (proc[j].arrivalTime == proc[i].arrivalTime && proc[j].priority < proc[i].priority)) {
+//                 // Swap processes
+//                 struct Process temp = proc[i];
+//                 proc[i] = proc[j];
+//                 proc[j] = temp;
+//             }
+//         }
+//     }
+// }
+
+// // Calculate waiting time
+// void calculateWaitingTime(struct Process proc[], int wt[], int n) {
+//     wt[0] = 0; // Waiting time for the first process is zero
+//     int pstart[n];
+//     pstart[0] = 0;
+//     for (int i = 1; i < n; i++) {
+//         pstart[i] = pstart[i - 1] + proc[i - 1].burstTime;
+//         wt[i] = pstart[i] - proc[i].arrivalTime;
+//     }
+// }
+
+// // Calculate turnaround time
+// void calculateTurnaroundTime(struct Process proc[], int wt[], int tat[], int n) {
+//     for (int i = 0; i < n; i++) {
+//         tat[i] = proc[i].burstTime + wt[i];
+//     }
+// }
+
+// // Function to print Gantt chart
+// void printGanttChart(struct Process proc[], int n, int wt[], int tat[]) {
+//     int total_time = 0;
+//     printf("\nGantt Chart:\n");
+//     printf("|");
+//     for (int i = 0; i < n; i++) {
+//         printf("P%d\t|", proc[i].processNo);
+//     }
+//     printf("\n");
+
+//     printf("0");
+//     for (int i = 0; i < n; i++) {
+//         total_time += proc[i].burstTime;
+//         printf("\t%d", total_time);
+//     }
+//     printf("\n");
+// }
+
+// int main() {
+//     int n;
+//     printf("Enter the number of processes: ");
+//     scanf("%d", &n);
+
+//     struct Process proc[n];
+//     int wt[n], tat[n];
+
+//     printf("Enter process details (arrival time, burst time, priority):\n");
+//     for (int i = 0; i < n; i++) {
+//         proc[i].processNo = i + 1;
+//         printf("P%d: ", i + 1);
+//         scanf("%d %d %d", &proc[i].arrivalTime, &proc[i].burstTime, &proc[i].priority);
+//     }
+
+//     // Sort processes based on arrival time and priority
+//     sortProcesses(proc, n);
+
+//     // Calculate waiting time and turnaround time
+//     calculateWaitingTime(proc, wt, n);
+//     calculateTurnaroundTime(proc, wt, tat, n);
+
+//     // Display results
+//     float awt = 0, atat = 0;
+//     printf("\nProcess\tArrival Time\tBurst Time\tPriority\tWaiting Time\tTurnaround Time\n");
+//     for (int i = 0; i < n; i++) {
+//         printf("P%d\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n", proc[i].processNo, proc[i].arrivalTime,
+//                proc[i].burstTime, proc[i].priority, wt[i], tat[i]);
+//         awt += wt[i];
+//         atat += tat[i];
+//     }
     
+//     printf("AWT=%.2f\t ATAT=%.2f\n", awt / n, atat / n);
+
+//     // Print the Gantt chart
+//     printGanttChart(proc, n, wt, tat);
+
+//     return 0;
+// }
+
+
+
+#include <stdio.h>
+
+typedef struct Process {
+    int pid;
+    int at;
+    int bt;
+    int ct;
+    int tat;
+    int wt;
+    int priority;
+    int st; // start time for Gantt chart
+} Process;
+
+typedef struct GanttBlock {
+    int pid;
+    int start;
+    int end;
+} GanttBlock;
+
+void main() {
+    int n;
+    printf("Enter no of processes: ");
+    scanf("%d", &n);
+
+    Process procs[n];
+    GanttBlock gantt[n];  // To store execution order
+    int gIndex = 0;
+
+    printf("Enter process details\n");
     for (int i = 0; i < n; i++) {
-        if (processes[i].arrival_time <= current_time && !processes[i].executed) {
-            if (processes[i].priority < highest_priority) {
-                highest_priority = processes[i].priority;
-                highest_priority_index = i;
+        procs[i].pid = i + 1;
+        printf("Arrival time of P%d: ", i + 1);
+        scanf("%d", &procs[i].at);
+        printf("Burst time of P%d: ", i + 1);
+        scanf("%d", &procs[i].bt);
+        printf("Priority of P%d: ", i + 1);
+        scanf("%d", &procs[i].priority);
+        procs[i].tat = -1;
+        procs[i].wt = -1;
+        procs[i].ct = -1;
+        procs[i].st = -1;
+    }
+
+    int cur_time = 0, count = 0;
+
+    while (count < n) {
+        int high_prt_index = -1;
+        int high_prt = 9999;
+        for (int i = 0; i < n; i++) {
+            if (procs[i].at <= cur_time && procs[i].ct == -1) {
+                if (procs[i].priority < high_prt) {
+                    high_prt = procs[i].priority;
+                    high_prt_index = i;
+                }
             }
         }
-    }
-    
-    return highest_priority_index;
-}
 
-// Function to calculate waiting time and turnaround time
-void calculateTimes(struct Process processes[], int n) {
-    int current_time = 0;
-    int completed = 0;
-    int timeline[100] = {0}; // For Gantt chart
-    int process_order[100] = {0}; // For Gantt chart
-    int chart_index = 0;
-    
-    // Initialize all processes as not executed
-    for (int i = 0; i < n; i++) {
-        processes[i].executed = false;
-    }
-    
-    // Process until all processes are completed
-    while (completed < n) {
-        int highest_priority_process = findHighestPriorityProcess(processes, n, current_time);
-        
-        if (highest_priority_process == -1) {
-            // No process available at current time
-            current_time++;
-            continue;
+        if (high_prt_index == -1) {
+            cur_time++;
+        } else {
+            procs[high_prt_index].st = cur_time;
+            cur_time += procs[high_prt_index].bt;
+            procs[high_prt_index].ct = cur_time;
+            procs[high_prt_index].tat = cur_time - procs[high_prt_index].at;
+            procs[high_prt_index].wt = procs[high_prt_index].tat - procs[high_prt_index].bt;
+
+            gantt[gIndex].pid = procs[high_prt_index].pid;
+            gantt[gIndex].start = procs[high_prt_index].st;
+            gantt[gIndex].end = procs[high_prt_index].ct;
+            gIndex++;
+
+            count++;
         }
-        
-        // Update process details
-        processes[highest_priority_process].start_time = current_time;
-        processes[highest_priority_process].completion_time = current_time + processes[highest_priority_process].burst_time;
-        processes[highest_priority_process].turnaround_time = processes[highest_priority_process].completion_time - processes[highest_priority_process].arrival_time;
-        processes[highest_priority_process].waiting_time = processes[highest_priority_process].turnaround_time - processes[highest_priority_process].burst_time;
-        processes[highest_priority_process].executed = true;
-        
-        // Update Gantt chart data
-        timeline[chart_index] = current_time;
-        process_order[chart_index] = processes[highest_priority_process].pid;
-        chart_index++;
-        
-        // Update current time
-        current_time = processes[highest_priority_process].completion_time;
-        completed++;
     }
-    
-    // Add final time point for Gantt chart
-    timeline[chart_index] = current_time;
-    
-    // Calculate average times
-    float total_waiting_time = 0, total_turnaround_time = 0;
-    
-    printf("\n+----------+-------------+-----------+----------+-------------+----------------+\n");
-    printf("| Process  | Arrival Time| Burst Time| Priority | Waiting Time| Turnaround Time|\n");
-    printf("+----------+-------------+-----------+----------+-------------+----------------+\n");
-    
+
+    float tot_wt = 0.0, tot_tat = 0.0;
+
+    printf("\nProcesses\tAT\tBT\tPriority\tWT\tTAT\n");
     for (int i = 0; i < n; i++) {
-        total_waiting_time += processes[i].waiting_time;
-        total_turnaround_time += processes[i].turnaround_time;
-        printf("| P%-7d | %-11d | %-9d | %-8d | %-11d | %-14d |\n", 
-               processes[i].pid, processes[i].arrival_time, processes[i].burst_time, 
-               processes[i].priority, processes[i].waiting_time, processes[i].turnaround_time);
+        printf("P%d\t\t%d\t%d\t%d\t\t%d\t%d\n",
+               procs[i].pid, procs[i].at, procs[i].bt,
+               procs[i].priority, procs[i].wt, procs[i].tat);
+        tot_wt += procs[i].wt;
+        tot_tat += procs[i].tat;
     }
-    
-    printf("+----------+-------------+-----------+----------+-------------+----------------+\n");
-    printf("Average waiting time = %.2f\n", total_waiting_time / n);
-    printf("Average turnaround time = %.2f\n", total_turnaround_time / n);
-    
-    // Print Gantt chart
-    printf("\nGantt Chart:\n");
-    printf("+");
-    for (int i = 0; i < chart_index; i++) {
-        for (int j = 0; j < 7; j++) printf("-");
-        printf("+");
-    }
-    printf("\n|");
-    
-    for (int i = 0; i < chart_index; i++) {
-        printf("  P%-3d |", process_order[i]);
-    }
-    printf("\n+");
-    
-    for (int i = 0; i < chart_index; i++) {
-        for (int j = 0; j < 7; j++) printf("-");
-        printf("+");
+
+    printf("Average Waiting Time = %.2f\n", tot_wt / n);
+    printf("Average Turn Around Time = %.2f\n", tot_tat / n);
+
+    // Print Gantt Chart
+    printf("\nGantt Chart:\n|");
+    for (int i = 0; i < gIndex; i++) {
+        printf(" P%d |", gantt[i].pid);
     }
     printf("\n");
-    
-    // Print timeline
-    for (int i = 0; i <= chart_index; i++) {
-        printf("%-7d", timeline[i]);
+
+    printf("%d", gantt[0].start);
+    for (int i = 0; i < gIndex; i++) {
+        printf("   %d", gantt[i].end);
     }
     printf("\n");
-}
-
-int main() {
-    int n;
-    
-    printf("Enter the number of processes: ");
-    scanf("%d", &n);
-    
-    struct Process processes[n];
-    
-    printf("\nEnter process details:\n");
-    for (int i = 0; i < n; i++) {
-        printf("\nProcess %d:\n", i + 1);
-        
-        processes[i].pid = i + 1;  // Process ID
-        
-        printf("Enter arrival time: ");
-        scanf("%d", &processes[i].arrival_time);
-        
-        printf("Enter burst time: ");
-        scanf("%d", &processes[i].burst_time);
-        
-        printf("Enter priority (lower value means higher priority): ");
-        scanf("%d", &processes[i].priority);
-    }
-    
-    printf("\nPriority Scheduling Algorithm\n");
-    printf("============================\n");
-    calculateTimes(processes, n);
-
-    return 0;
 }

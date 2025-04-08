@@ -1,25 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct Block {
-    int blockSize;       // Total size of the memory block
-    int remainingSize;   // Remaining size of the block
-    struct Block* next;  // Pointer to the next block
+typedef struct Block 
+{
+    int blockSize;      // Size of the memory block
+    int remainingSize;  // Remaining size of the block
+    struct Block* next; // Pointer to the next block
 } Block;
 
-typedef struct Process {
-    int processSize;     // Size of the process
-    int allocatedBlock;  // Block to which the process is allocated (-1 if not allocated)
-    int remainingBlockSize; // Remaining size of the allocated block
+typedef struct Process 
+{
+    int processSize;    // Size of the process
 } Process;
 
 // Function to create a new block node
-Block* createBlock(int blockSize) {
+Block* createBlock(int blockSize) 
+{
     Block* newBlock = (Block*)malloc(sizeof(Block));
-    if (newBlock == NULL) {
-        printf("Memory allocation failed for block\n");
-        exit(1);
-    }
     newBlock->blockSize = blockSize;
     newBlock->remainingSize = blockSize;
     newBlock->next = NULL;
@@ -27,117 +24,111 @@ Block* createBlock(int blockSize) {
 }
 
 // Function to allocate processes using Worst-Fit algorithm
-void worstFit(Block* blockList, Process* processList, int blockCount, int processCount) {
-    for (int i = 0; i < processCount; i++) {
+void worstFit(Block* blockList, Process* processList, int blockSize, int processSize) 
+{
+    int allocation[processSize];
+    for (int i = 0; i < processSize; i++) 
+    {
+        allocation[i] = -1;  // Initially mark all processes as unallocated
         Block* currentBlock = blockList;
         Block* worstBlock = NULL;
-        int largestRemainingSize = 0;
 
-        // Find the worst-fit block
-        while (currentBlock != NULL) {
-            // Check if block can accommodate the process
-            if (currentBlock->remainingSize >= processList[i].processSize) {
-                // Find block with largest remaining size
-                if (currentBlock->remainingSize > largestRemainingSize) {
+        // Traverse the linked list to find the block with the worst fit (largest remaining size)
+        while (currentBlock != NULL) 
+        {
+            if (currentBlock->remainingSize >= processList[i].processSize) 
+            {
+                if (worstBlock == NULL || currentBlock->remainingSize > worstBlock->remainingSize) 
+                {
                     worstBlock = currentBlock;
-                    largestRemainingSize = currentBlock->remainingSize;
                 }
             }
             currentBlock = currentBlock->next;
         }
 
-        // Allocate to the worst-fit block
-        if (worstBlock != NULL) {
-            processList[i].allocatedBlock = worstBlock->blockSize;
-            processList[i].remainingBlockSize = worstBlock->remainingSize - processList[i].processSize;
+        // Allocate the process to the worst-fit block
+        if (worstBlock != NULL) 
+        {
+            allocation[i] = worstBlock->blockSize;
             worstBlock->remainingSize -= processList[i].processSize;
-        } else {
-            processList[i].allocatedBlock = -1;
-            processList[i].remainingBlockSize = -1;
         }
     }
 
     // Print the results in a tabular format
-    printf("\nWorst-Fit Memory Allocation Results:\n");
-    printf("-----------------------------------------------------------------\n");
-    printf("| Process No. | Process Size | Block Size | Remaining Block Size |\n");
-    printf("-----------------------------------------------------------------\n");
+    printf("\nWorst-Fit Allocation:\n");
+    printf("---------------------------------------------------------------\n");
+    printf("| Process No. | Process Size | Block Size | Block Size Remaining |\n");
+    printf("---------------------------------------------------------------\n");
 
-    for (int i = 0; i < processCount; i++) {
-        if (processList[i].allocatedBlock != -1) {
-            printf("| %-11d | %-12d | %-10d | %-19d |\n", 
-                   i + 1, 
-                   processList[i].processSize, 
-                   processList[i].allocatedBlock,
-                   processList[i].remainingBlockSize);
-        } else {
-            printf("| %-11d | %-12d | %-10s | %-19s |\n", 
-                   i + 1, 
-                   processList[i].processSize, 
-                   "N/A", 
-                   "N/A");
+    // Print each process allocation in a tabular format
+    for (int i = 0; i < processSize; i++) 
+    {
+        Block* currentBlock = blockList;
+        int allocated = 0;
+
+        while (currentBlock != NULL) 
+        {
+            // If block was allocated to process
+            if (currentBlock->blockSize == allocation[i]) 
+            {
+                printf("|     %d      |     %d      |     %d    |        %d          |\n", i + 1, processList[i].processSize, currentBlock->blockSize, currentBlock->remainingSize);
+                allocated = 1;
+                break;
+            }
+            currentBlock = currentBlock->next;
+        }
+
+        if (allocated == 0) 
+        {
+            printf("|     %d      |     %d      |    N/A   |        N/A          |\n", i + 1, processList[i].processSize);
         }
     }
-    printf("-----------------------------------------------------------------\n");
+    printf("---------------------------------------------------------------\n");
 }
 
-// Function to free allocated memory
-void freeMemory(Block* blockList) {
-    Block* currentBlock = blockList;
-    while (currentBlock != NULL) {
-        Block* temp = currentBlock;
-        currentBlock = currentBlock->next;
-        free(temp);
-    }
-}
-
-int main() {
-    int blockCount, processCount;
+int main() 
+{
+    int blockSize, processSize;
 
     // Input memory block details
     printf("Enter the number of memory blocks: ");
-    scanf("%d", &blockCount);
-
+    scanf("%d", &blockSize);
+    
     Block* blockList = NULL;
     Block* tempBlock = NULL;
-
-    for (int i = 0; i < blockCount; i++) {
+    for (int i = 0; i < blockSize; i++) 
+    {
         int blockMem;
         printf("Block %d size: ", i + 1);
         scanf("%d", &blockMem);
 
+        // Create a new block and add it to the linked list
         Block* newBlock = createBlock(blockMem);
-        
-        if (blockList == NULL) {
-            blockList = newBlock;
-        } else {
-            tempBlock->next = newBlock;
+        if (blockList == NULL) 
+        {
+            blockList = newBlock; // First block becomes the head
+        } 
+        else 
+        {
+            tempBlock->next = newBlock; // Link the new block to the previous one
         }
         tempBlock = newBlock;
     }
 
     // Input process details
     printf("Enter the number of processes: ");
-    scanf("%d", &processCount);
+    scanf("%d", &processSize);
 
-    Process* processList = malloc(processCount * sizeof(Process));
-    if (processList == NULL) {
-        printf("Memory allocation failed for processes\n");
-        return 1;
-    }
-
-    for (int i = 0; i < processCount; i++) {
+    Process processList[processSize];
+    for (int i = 0; i < processSize; i++) 
+    {
         printf("Process %d size: ", i + 1);
         scanf("%d", &processList[i].processSize);
-        processList[i].allocatedBlock = -1;
     }
 
-    // Perform Worst-Fit memory allocation
-    worstFit(blockList, processList, blockCount, processCount);
-
-    // Free allocated memory
-    freeMemory(blockList);
-    free(processList);
+    // Perform the Worst-Fit allocation
+    worstFit(blockList, processList, blockSize, processSize);
 
     return 0;
 }
+

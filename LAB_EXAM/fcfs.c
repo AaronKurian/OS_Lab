@@ -1,167 +1,140 @@
+// #include <stdio.h>
+
+// void findWaitingTime(int processes[], int n, int bt[], int wt[], int at[]) {
+//     wt[0] = 0;  // Waiting time for the first process is 0
+//     for (int i = 1; i < n; i++) {
+//         wt[i] = at[i - 1] + wt[i - 1] + bt[i - 1] - at[i];
+//     }
+// }
+
+// void findTurnAroundTime(int processes[], int n, int bt[], int wt[], int at[], int tat[]) {
+//     for (int i = 0; i < n; i++) {
+//         tat[i] = wt[i] + bt[i];
+//     }
+// }
+
+// void findAvgTime(int processes[], int n, int bt[], int at[]) {
+//     int wt[n], tat[n], total_wt = 0, total_tat = 0;
+//     findWaitingTime(processes, n, bt, wt, at);
+//     findTurnAroundTime(processes, n, bt, wt, at, tat);
+
+//     printf("Processes\tArrival time\tBurst time\tWaiting time\tTurnaround time\n");
+//     for (int i = 0; i < n; i++) {
+//         total_wt += wt[i];
+//         total_tat += tat[i];
+//         printf("%d\t\t%d\t\t%d\t\t%d\t\t%d\n", i + 1, at[i], bt[i], wt[i], tat[i]);
+//     }
+
+//     printf("Average waiting time = %.2f\n", (float)total_wt / n);
+//     printf("Average turnaround time = %.2f\n", (float)total_tat / n);
+
+//     // Print Gantt chart
+//     printf("\nGantt Chart: \n");
+//     int time = 0;
+//     printf("|");
+//     for (int i = 0; i < n; i++) {
+//         // We simulate the process execution by adding burst time to the current time
+//         printf("P%d\t|", processes[i]);
+//         time += bt[i];
+//     }
+//     printf("\n");
+
+//     // Print timeline below the Gantt chart
+//     time = 0;
+//     printf("0\t");
+//     for (int i = 0; i < n; i++) {
+//         time += bt[i];
+//         printf("%d\t", time);
+//     }
+//     printf("\n");
+// }
+
+// int main() {
+//     int processes[] = {1, 2, 3, 4, 5};  // Process IDs
+//     int n = sizeof(processes) / sizeof(processes[0]);
+//     int burst_time[] = {8, 1, 3, 2, 6};  // Burst times for each process
+//     int arrival_time[] = {0, 1, 2, 3, 4};  // Arrival times for each process
+
+//     findAvgTime(processes, n, burst_time, arrival_time);
+
+//     return 0;
+// }
+
+
+
 #include <stdio.h>
 
-void findWaitingTime(int processes[], int n, int bt[], int wt[], int at[]) {
-    // Service time to track when each process will get the CPU
-    int service_time[n];
-    
-    // First process starts at its arrival time
-    service_time[0] = at[0];
+// Function to calculate Waiting Time
+void findWaitingTime(int n, int bt[], int wt[], int at[]) {
     wt[0] = 0;
-    
-    // Calculate service time and waiting time for each process
     for (int i = 1; i < n; i++) {
-        // Service time = max(completion time of previous process, arrival time of current process)
-        service_time[i] = service_time[i-1] + bt[i-1];
-        if (service_time[i] < at[i])
-            service_time[i] = at[i];
-            
-        // Waiting time = service time - arrival time
-        wt[i] = service_time[i] - at[i];
-        
-        // If waiting time is negative, set it to 0
-        if (wt[i] < 0)
-            wt[i] = 0;
+        int service_time = at[i - 1] + wt[i - 1] + bt[i - 1];
+        wt[i] = service_time - at[i];
+        if (wt[i] < 0) wt[i] = 0;
     }
 }
 
-void findTurnAroundTime(int processes[], int n, int bt[], int wt[], int at[], int tat[]) {
+// Function to calculate Turnaround Time
+void findTurnAroundTime(int n, int bt[], int wt[], int tat[]) {
     for (int i = 0; i < n; i++) {
         tat[i] = bt[i] + wt[i];
     }
 }
 
+// Function to perform FCFS Scheduling and print everything
 void findAvgTime(int processes[], int n, int bt[], int at[]) {
-    int wt[n], tat[n], total_wt = 0, total_tat = 0;
-    
-    // Sort processes by arrival time (bubble sort)
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
-            if (at[j] > at[j + 1]) {
-                // Swap arrival times
-                int temp = at[j];
-                at[j] = at[j + 1];
-                at[j + 1] = temp;
-                
-                // Swap burst times
-                temp = bt[j];
-                bt[j] = bt[j + 1];
-                bt[j + 1] = temp;
-                
-                // Swap process IDs
-                temp = processes[j];
-                processes[j] = processes[j + 1];
-                processes[j + 1] = temp;
-            }
-        }
-    }
-    
-    findWaitingTime(processes, n, bt, wt, at);
-    findTurnAroundTime(processes, n, bt, wt, at, tat);
+    int wt[n], tat[n];
+    float total_wt = 0, total_tat = 0;
 
-    printf("\n+----------+-------------+-----------+-------------+----------------+\n");
-    printf("| Process  | Arrival Time| Burst Time| Waiting Time| Turnaround Time|\n");
-    printf("+----------+-------------+-----------+-------------+----------------+\n");
-    
+    findWaitingTime(n, bt, wt, at);
+    findTurnAroundTime(n, bt, wt, tat);
+
+    printf("\nProcesses\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time\n");
     for (int i = 0; i < n; i++) {
         total_wt += wt[i];
         total_tat += tat[i];
-        printf("| P%-7d | %-11d | %-9d | %-11d | %-14d |\n", 
-               processes[i], at[i], bt[i], wt[i], tat[i]);
+        printf("P%d\t\t%d\t\t%d\t\t%d\t\t%d\n", processes[i], at[i], bt[i], wt[i], tat[i]);
     }
-    
-    printf("+----------+-------------+-----------+-------------+----------------+\n");
-    printf("Average waiting time = %.2f\n", (float)total_wt / n);
-    printf("Average turnaround time = %.2f\n", (float)total_tat / n);
 
-    // Print Gantt chart
-    printf("\nGantt Chart:\n");
-    printf("+");
-    
+    printf("\nAverage Waiting Time = %.2f\n", total_wt / n);
+    printf("Average Turnaround Time = %.2f\n", total_tat / n);
+
+    // Gantt Chart
+    printf("\nGantt Chart:\n|");
     int current_time = 0;
     for (int i = 0; i < n; i++) {
-        // If there's a gap between processes
-        if (current_time < at[i]) {
-            for (int j = 0; j < 7; j++) printf("-");
-            printf("+");
-            current_time = at[i];
+        if (at[i] > current_time) {
+            current_time = at[i]; // CPU idle until process arrives
         }
-        
-        // Print process box
-        for (int j = 0; j < 7; j++) printf("-");
-        printf("+");
-    }
-    printf("\n|");
-    
-    current_time = 0;
-    for (int i = 0; i < n; i++) {
-        // If there's a gap between processes
-        if (current_time < at[i]) {
-            printf(" IDLE  |");
-            current_time = at[i];
-        }
-        
-        // Print process ID
-        printf("  P%-3d |", processes[i]);
+        printf(" P%d |", processes[i]);
         current_time += bt[i];
     }
-    printf("\n+");
-    
-    current_time = 0;
-    for (int i = 0; i < n; i++) {
-        // If there's a gap between processes
-        if (current_time < at[i]) {
-            for (int j = 0; j < 7; j++) printf("-");
-            printf("+");
-            current_time = at[i];
-        }
-        
-        // Print process box
-        for (int j = 0; j < 7; j++) printf("-");
-        printf("+");
-    }
-    printf("\n");
 
-    // Print timeline below the Gantt chart
+    printf("\n0");
     current_time = 0;
-    printf("%-7d", current_time);
-    
     for (int i = 0; i < n; i++) {
-        // If there's a gap between processes
-        if (current_time < at[i]) {
+        if (at[i] > current_time) {
             current_time = at[i];
-            printf("%-7d", current_time);
         }
-        
         current_time += bt[i];
-        printf("%-7d", current_time);
+        printf("\t%d", current_time);
     }
     printf("\n");
 }
 
 int main() {
     int n;
-    
-    printf("Enter the number of processes: ");
+    printf("Enter number of processes: ");
     scanf("%d", &n);
-    
-    int processes[n], burst_time[n], arrival_time[n];
-    
-    printf("\nEnter process details:\n");
+
+    int processes[n], bt[n], at[n];
     for (int i = 0; i < n; i++) {
-        printf("\nProcess %d:\n", i + 1);
-        
-        processes[i] = i + 1;  // Process ID
-        
-        printf("Enter arrival time: ");
-        scanf("%d", &arrival_time[i]);
-        
-        printf("Enter burst time: ");
-        scanf("%d", &burst_time[i]);
+        processes[i] = i + 1;
+        printf("Enter Arrival Time and Burst Time for Process P%d: ", i + 1);
+        scanf("%d %d", &at[i], &bt[i]);
     }
-    
-    printf("\nFCFS Scheduling Algorithm\n");
-    printf("=========================\n");
-    findAvgTime(processes, n, burst_time, arrival_time);
+
+    findAvgTime(processes, n, bt, at);
 
     return 0;
 }
